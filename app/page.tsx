@@ -71,7 +71,7 @@ export default function Home() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [importStatus, setImportStatus] = useState<
     { type: "success" | "error"; message: string }
-  | null>(null);
+    | null>(null);
 
   const currentSentence = sentences[currentIndex];
 
@@ -297,9 +297,8 @@ export default function Home() {
         setInputValue("");
         setImportStatus({
           type: "success",
-          message: `Imported ${parsed.length} sentence${
-            parsed.length === 1 ? "" : "s"
-          } successfully.`,
+          message: `Imported ${parsed.length} sentence${parsed.length === 1 ? "" : "s"
+            } successfully.`,
         });
       } catch (error) {
         console.error("Unable to import sentences", error);
@@ -331,9 +330,9 @@ export default function Home() {
 
     let mismatch:
       | {
-          expected: string;
-          typed: string | undefined;
-        }
+        expected: string;
+        typed: string | undefined;
+      }
       | null = null;
     let mismatchFound = false;
 
@@ -395,6 +394,19 @@ export default function Home() {
 
           {currentSentence ? (
             <div className="flex flex-col gap-6">
+
+              <label className="flex flex-col gap-3">
+                <span className="text-sm font-medium text-slate-700">
+                  Type what you hear
+                </span>
+                <textarea
+                  value={inputValue}
+                  onChange={(event) => handleInputChange(event.target.value)}
+                  placeholder="Start typing the sentence..."
+                  className="min-h-[140px] resize-none rounded-2xl border border-slate-300 bg-white p-4 text-base text-slate-900 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                  autoFocus
+                />
+              </label>
               <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-6">
                 <div className="mb-4 flex items-center justify-between gap-4">
                   <p className="text-sm font-medium text-slate-700">
@@ -460,18 +472,6 @@ export default function Home() {
                 )}
               </div>
 
-              <label className="flex flex-col gap-3">
-                <span className="text-sm font-medium text-slate-700">
-                  Type what you hear
-                </span>
-                <textarea
-                  value={inputValue}
-                  onChange={(event) => handleInputChange(event.target.value)}
-                  placeholder="Start typing the sentence..."
-                  className="min-h-[140px] resize-none rounded-2xl border border-slate-300 bg-white p-4 text-base text-slate-900 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
-                  autoFocus
-                />
-              </label>
             </div>
           ) : (
             <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50/50 p-12 text-center text-sm text-slate-500">
@@ -516,11 +516,10 @@ export default function Home() {
             </div>
             {importStatus && (
               <p
-                className={`mt-3 text-sm ${
-                  importStatus.type === "success"
+                className={`mt-3 text-sm ${importStatus.type === "success"
                     ? "text-emerald-600"
                     : "text-rose-600"
-                }`}
+                  }`}
               >
                 {importStatus.message}
               </p>
@@ -554,7 +553,7 @@ export default function Home() {
               </button>
             </label>
 
-            <div className="space-y-3">
+            <div className="space-y-3 max-h-[400px] overflow-y-auto">
               {sentences.length === 0 ? (
                 <p className="text-sm text-slate-500">
                   No sentences yet. Start by adding one above.
@@ -563,11 +562,10 @@ export default function Home() {
                 sentences.map((sentence, index) => (
                   <div
                     key={sentence.id}
-                    className={`rounded-2xl border px-4 py-3 text-sm shadow-sm transition ${
-                      index === currentIndex
+                    className={`rounded-2xl border px-4 py-3 text-sm shadow-sm transition ${index === currentIndex
                         ? "border-slate-900/60 bg-slate-900/5"
                         : "border-slate-200 bg-white"
-                    }`}
+                      }`}
                   >
                     <div className="mb-2 flex items-center justify-between gap-2">
                       <button

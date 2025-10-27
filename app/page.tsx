@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type Sentence = {
   id: string;
@@ -13,6 +13,7 @@ const DEFAULT_SENTENCES: Sentence[] = [
   { id: "s-2", text: "Please open the window before the rain starts." },
   { id: "s-3", text: "Travel teaches you what books alone never can." },
 ];
+const EXPORT_FILENAME = "dictate-english-sentences.json";
 
 const normalize = (value: string) => value.replace(/\s+/g, " ").trim();
 
@@ -24,6 +25,42 @@ const makeId = () => {
   return `s-${Math.random().toString(36).slice(2, 10)}`;
 };
 
+const sanitizeSentencesPayload = (value: unknown): Sentence[] | null => {
+  if (!Array.isArray(value)) {
+    return null;
+  }
+
+  const seenIds = new Set<string>();
+  const sanitized: Sentence[] = [];
+
+  for (const entry of value) {
+    if (!entry || typeof entry !== "object") {
+      continue;
+    }
+
+    const maybeId = (entry as { id?: unknown }).id;
+    const maybeText = (entry as { text?: unknown }).text;
+
+    if (typeof maybeText !== "string") {
+      continue;
+    }
+
+    let id =
+      typeof maybeId === "string" && maybeId.trim().length > 0
+        ? maybeId.trim()
+        : makeId();
+
+    while (seenIds.has(id)) {
+      id = makeId();
+    }
+
+    sanitized.push({ id, text: maybeText });
+    seenIds.add(id);
+  }
+
+  return sanitized;
+};
+
 export default function Home() {
   const [sentences, setSentences] = useState<Sentence[]>(DEFAULT_SENTENCES);
   const [isReady, setIsReady] = useState(false);
@@ -31,6 +68,10 @@ export default function Home() {
   const [inputValue, setInputValue] = useState("");
   const [draft, setDraft] = useState("");
   const [speechAvailable, setSpeechAvailable] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [importStatus, setImportStatus] = useState<
+    { type: "success" | "error"; message: string }
+  | null>(null);
 
   const currentSentence = sentences[currentIndex];
 
@@ -42,14 +83,8 @@ export default function Home() {
     try {
       const stored = window.localStorage.getItem(STORAGE_KEY);
       if (stored) {
-        const parsed: Sentence[] = JSON.parse(stored);
-        if (
-          Array.isArray(parsed) &&
-          parsed.every(
-            (item) =>
-              typeof item.id === "string" && typeof item.text === "string",
-          )
-        ) {
+        const parsed = sanitizeSentencesPayload(JSON.parse(stored));
+        if (parsed) {
           setSentences(parsed);
         }
       }
@@ -75,6 +110,20 @@ export default function Home() {
 
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(sentences));
   }, [isReady, sentences]);
+
+  useEffect(() => {
+    if (!importStatus || typeof window === "undefined") {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setImportStatus(null);
+    }, 5000);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [importStatus, setImportStatus]);
 
   useEffect(() => {
     setCurrentIndex((previous) => {
@@ -189,6 +238,80 @@ export default function Home() {
       previous.filter((sentence) => sentence.id !== id),
     );
   };
+
+  const handleExport = useCallback(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    try {
+      const payload = sentences.map((sentence) => ({
+        id: sentence.id,
+        text: sentence.text,
+      }));
+
+      const blob = new Blob([JSON.stringify(payload, null, 2)], {
+        type: "application/json",
+      });
+      const url = window.URL.createObjectURL(blob);
+      const tempLink = document.createElement("a");
+      tempLink.href = url;
+      tempLink.download = EXPORT_FILENAME;
+      document.body.appendChild(tempLink);
+      tempLink.click();
+      tempLink.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Unable to export sentences", error);
+    }
+  }, [sentences]);
+
+  const handleImportFile = useCallback(
+    async (event: ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (event.target.value) {
+        event.target.value = "";
+      }
+
+      if (!file) {
+        return;
+      }
+
+      setImportStatus(null);
+
+      try {
+        const text = await file.text();
+        const raw = JSON.parse(text);
+        const parsed = sanitizeSentencesPayload(raw);
+
+        if (!parsed) {
+          throw new Error("Invalid payload");
+        }
+
+        if (Array.isArray(raw) && raw.length > 0 && parsed.length === 0) {
+          throw new Error("No valid sentences");
+        }
+
+        setSentences(parsed);
+        setCurrentIndex(0);
+        setInputValue("");
+        setImportStatus({
+          type: "success",
+          message: `Imported ${parsed.length} sentence${
+            parsed.length === 1 ? "" : "s"
+          } successfully.`,
+        });
+      } catch (error) {
+        console.error("Unable to import sentences", error);
+        setImportStatus({
+          type: "error",
+          message:
+            "Import failed. Please choose a JSON file exported from this app.",
+        });
+      }
+    },
+    [setCurrentIndex, setImportStatus, setInputValue, setSentences],
+  );
 
   const { wordStates, mismatch } = useMemo(() => {
     if (!currentSentence) {
@@ -366,6 +489,49 @@ export default function Home() {
             <p className="mt-1 text-sm text-slate-500">
               Create a small library to practice from. Changes save automatically.
             </p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+              Backup &amp; Share
+            </p>
+            <p className="mt-2 text-sm text-slate-600">
+              Export your sentences or import a saved list in one click.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={handleExport}
+                className="rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700"
+              >
+                Export
+              </button>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="rounded-full border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400"
+              >
+                Import
+              </button>
+            </div>
+            {importStatus && (
+              <p
+                className={`mt-3 text-sm ${
+                  importStatus.type === "success"
+                    ? "text-emerald-600"
+                    : "text-rose-600"
+                }`}
+              >
+                {importStatus.message}
+              </p>
+            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="application/json"
+              className="hidden"
+              onChange={handleImportFile}
+            />
           </div>
 
           <div className="space-y-4">

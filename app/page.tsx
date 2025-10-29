@@ -366,22 +366,22 @@ export default function Home() {
   }, [currentSentence, inputValue]);
 
   return (
-    <div className="min-h-screen bg-slate-100 py-12 text-slate-900">
+    <div className="min-h-screen bg-slate-950 py-12 text-slate-100">
       <main className="mx-auto flex w-full max-w-6xl gap-8 px-8">
-        <section className="flex-1 rounded-3xl border border-slate-200 bg-white p-10 shadow-sm">
+        <section className="flex-1 rounded-3xl border border-slate-800 bg-slate-900 p-10 shadow-lg shadow-slate-950/40">
           <header className="mb-8 flex items-start justify-between gap-4">
             <div>
               <p className="text-sm uppercase tracking-[0.3em] text-slate-400">
                 Dictation
               </p>
-              <h1 className="mt-2 text-3xl font-semibold text-slate-900">
+              <h1 className="mt-2 text-3xl font-semibold text-slate-100">
                 Listen &amp; Type
               </h1>
-              <p className="mt-2 text-sm text-slate-500">
+              <p className="mt-2 text-sm text-slate-400">
                 Press Cmd+R (Ctrl+R on Windows) to replay the current sentence.
               </p>
             </div>
-            <div className="shrink-0 rounded-full bg-slate-900/5 px-5 py-2 text-xs font-medium text-slate-600">
+            <div className="shrink-0 rounded-full bg-slate-800 px-5 py-2 text-xs font-medium text-slate-300">
               {sentences.length > 0 ? (
                 <>
                   Sentence {currentIndex + 1} of {sentences.length}
@@ -396,22 +396,22 @@ export default function Home() {
             <div className="flex flex-col gap-6">
 
               <label className="flex flex-col gap-3">
-                <span className="text-sm font-medium text-slate-700">
+                <span className="text-sm font-medium text-slate-200">
                   Type what you hear
                 </span>
                 <textarea
                   value={inputValue}
                   onChange={(event) => handleInputChange(event.target.value)}
                   placeholder="Start typing the sentence..."
-                  className="min-h-[140px] resize-none rounded-2xl border border-slate-300 bg-white p-4 text-base text-slate-900 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                  className="min-h-[140px] resize-none rounded-2xl border border-slate-700 bg-slate-950 p-4 text-base text-slate-100 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-700"
                   autoFocus
                 />
               </label>
-              <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-6">
+              <div className="rounded-2xl border border-slate-800 bg-slate-950 p-6">
                 <div className="mb-4 flex items-center justify-between gap-4">
-                  <p className="text-sm font-medium text-slate-700">
+                  <p className="text-sm font-medium text-slate-200">
                     Speaking:{" "}
-                    <span className="font-semibold text-slate-900">
+                    <span className="font-semibold text-slate-100">
                       {currentSentence.text}
                     </span>
                   </p>
@@ -421,7 +421,7 @@ export default function Home() {
                       onClick={() =>
                         currentSentence && speak(currentSentence.text)
                       }
-                      className="rounded-full bg-slate-900 px-5 py-2 text-sm font-medium text-white transition hover:bg-slate-700"
+                      className="rounded-full bg-emerald-500 px-5 py-2 text-sm font-medium text-slate-900 transition hover:bg-emerald-400"
                     >
                       Replay
                     </button>
@@ -437,7 +437,7 @@ export default function Home() {
                           return nextIndex < sentences.length ? nextIndex : 0;
                         })
                       }
-                      className="rounded-full border border-slate-300 px-5 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400"
+                      className="rounded-full border border-slate-700 px-5 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500"
                     >
                       Skip
                     </button>
@@ -449,10 +449,10 @@ export default function Home() {
                       "rounded-full border px-3 py-1 text-sm transition";
                     const styles =
                       status === "correct"
-                        ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                        ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-200"
                         : status === "error"
-                          ? "border-rose-200 bg-rose-50 text-rose-700"
-                          : "border-transparent bg-white text-slate-600";
+                          ? "border-rose-500/40 bg-rose-500/10 text-rose-200"
+                          : "border-slate-700 bg-slate-800 text-slate-300";
                     return (
                       <span
                         key={`${word}-${index}`}
@@ -464,7 +464,7 @@ export default function Home() {
                   })}
                 </div>
                 {mismatch && (
-                  <p className="mt-4 text-sm text-rose-600">
+                  <p className="mt-4 text-sm text-rose-400">
                     {mismatch.expected
                       ? `Check the word "${mismatch.expected}". You typed "${mismatch.typed ?? ""}".`
                       : `You added an extra word: "${mismatch.typed ?? ""}".`}
@@ -474,42 +474,42 @@ export default function Home() {
 
             </div>
           ) : (
-            <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50/50 p-12 text-center text-sm text-slate-500">
+            <div className="rounded-3xl border border-dashed border-slate-700 bg-slate-900/40 p-12 text-center text-sm text-slate-400">
               Add a sentence to get started. Sentences are stored locally in your
               browser.
             </div>
           )}
         </section>
 
-        <aside className="w-[320px] shrink-0 space-y-6 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+        <aside className="w-[320px] shrink-0 space-y-6 rounded-3xl border border-slate-800 bg-slate-900 p-8 shadow-lg shadow-slate-950/40">
           <div>
-            <h2 className="text-lg font-semibold text-slate-900">
+            <h2 className="text-lg font-semibold text-slate-100">
               Sentence Bank
             </h2>
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-sm text-slate-400">
               Create a small library to practice from. Changes save automatically.
             </p>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+          <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
               Backup &amp; Share
             </p>
-            <p className="mt-2 text-sm text-slate-600">
+            <p className="mt-2 text-sm text-slate-300">
               Export your sentences or import a saved list in one click.
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
               <button
                 type="button"
                 onClick={handleExport}
-                className="rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700"
+                className="rounded-full bg-emerald-500 px-4 py-2 text-sm font-medium text-slate-900 transition hover:bg-emerald-400"
               >
                 Export
               </button>
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="rounded-full border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400"
+                className="rounded-full border border-slate-700 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500"
               >
                 Import
               </button>
@@ -517,8 +517,8 @@ export default function Home() {
             {importStatus && (
               <p
                 className={`mt-3 text-sm ${importStatus.type === "success"
-                    ? "text-emerald-600"
-                    : "text-rose-600"
+                    ? "text-emerald-400"
+                    : "text-rose-400"
                   }`}
               >
                 {importStatus.message}
@@ -535,19 +535,19 @@ export default function Home() {
 
           <div className="space-y-4">
             <label className="flex flex-col gap-2">
-              <span className="text-sm font-medium text-slate-700">
+              <span className="text-sm font-medium text-slate-200">
                 Add a sentence
               </span>
               <textarea
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}
                 placeholder="Example: She left the keys on the kitchen counter."
-                className="min-h-[96px] resize-none rounded-2xl border border-slate-300 bg-slate-50 p-3 text-sm text-slate-900 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                className="min-h-[96px] resize-none rounded-2xl border border-slate-700 bg-slate-950 p-3 text-sm text-slate-100 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-700"
               />
               <button
                 type="button"
                 onClick={handleAddSentence}
-                className="self-end rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700"
+                className="self-end rounded-full bg-emerald-500 px-4 py-2 text-sm font-medium text-slate-900 transition hover:bg-emerald-400"
               >
                 Save
               </button>
@@ -555,7 +555,7 @@ export default function Home() {
 
             <div className="space-y-3 max-h-[400px] overflow-y-auto">
               {sentences.length === 0 ? (
-                <p className="text-sm text-slate-500">
+                <p className="text-sm text-slate-400">
                   No sentences yet. Start by adding one above.
                 </p>
               ) : (
@@ -563,15 +563,15 @@ export default function Home() {
                   <div
                     key={sentence.id}
                     className={`rounded-2xl border px-4 py-3 text-sm shadow-sm transition ${index === currentIndex
-                        ? "border-slate-900/60 bg-slate-900/5"
-                        : "border-slate-200 bg-white"
+                        ? "border-emerald-500/40 bg-emerald-500/10"
+                        : "border-slate-800 bg-slate-950"
                       }`}
                   >
                     <div className="mb-2 flex items-center justify-between gap-2">
                       <button
                         type="button"
                         onClick={() => setCurrentIndex(index)}
-                        className="text-xs font-semibold uppercase tracking-wide text-slate-500"
+                        className="text-xs font-semibold uppercase tracking-wide text-slate-400"
                       >
                         Sentence {index + 1}
                       </button>
@@ -579,14 +579,14 @@ export default function Home() {
                         <button
                           type="button"
                           onClick={() => speak(sentence.text)}
-                          className="text-xs font-medium text-slate-500 transition hover:text-slate-700"
+                          className="text-xs font-medium text-slate-300 transition hover:text-slate-100"
                         >
                           Play
                         </button>
                         <button
                           type="button"
                           onClick={() => handleDeleteSentence(sentence.id)}
-                          className="text-xs font-medium text-rose-500 transition hover:text-rose-600"
+                          className="text-xs font-medium text-rose-400 transition hover:text-rose-300"
                         >
                           Delete
                         </button>
@@ -597,7 +597,7 @@ export default function Home() {
                       onChange={(event) =>
                         handleUpdateSentence(sentence.id, event.target.value)
                       }
-                      className="h-24 w-full resize-none rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-900 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                      className="h-24 w-full resize-none rounded-xl border border-slate-800 bg-slate-950 p-3 text-sm text-slate-100 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-700"
                     />
                   </div>
                 ))

@@ -566,6 +566,7 @@ export default function Home() {
                         ? "border-emerald-500/40 bg-emerald-500/10"
                         : "border-slate-800 bg-slate-950"
                       }`}
+                    onClick={() => setCurrentIndex(index)}
                   >
                     <div className="mb-2 flex items-center justify-between gap-2">
                       <button
@@ -597,6 +598,7 @@ export default function Home() {
                       onChange={(event) =>
                         handleUpdateSentence(sentence.id, event.target.value)
                       }
+                      onFocus={() => setCurrentIndex(index)}
                       className="h-24 w-full resize-none rounded-xl border border-slate-800 bg-slate-950 p-3 text-sm text-slate-100 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-700"
                     />
                   </div>

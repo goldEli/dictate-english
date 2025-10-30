@@ -1,6 +1,15 @@
 "use client";
 
-import { ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  ChangeEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+
+import { ConfettiBurst } from "@/app/components/confetti";
 
 type Sentence = {
   id: string;
@@ -72,6 +81,15 @@ export default function Home() {
   const [importStatus, setImportStatus] = useState<
     { type: "success" | "error"; message: string }
     | null>(null);
+  const [celebrations, setCelebrations] = useState<string[]>([]);
+  const triggerCelebration = useCallback(() => {
+    setCelebrations((previous) => [...previous, makeId()]);
+  }, []);
+  const handleCelebrationComplete = useCallback((id: string) => {
+    setCelebrations((previous) =>
+      previous.filter((value) => value !== id),
+    );
+  }, []);
 
   const currentSentence = sentences[currentIndex];
 
@@ -200,6 +218,7 @@ export default function Home() {
     const typed = normalize(value);
 
     if (expected.length > 0 && typed === expected) {
+      triggerCelebration();
       setInputValue("");
       setCurrentIndex((previous) => {
         if (sentences.length === 0) {
@@ -367,6 +386,13 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-slate-950 py-12 text-slate-100">
+      {celebrations.map((id) => (
+        <ConfettiBurst
+          key={id}
+          seed={id}
+          onDone={() => handleCelebrationComplete(id)}
+        />
+      ))}
       <main className="mx-auto flex w-full max-w-6xl gap-8 px-8">
         <section className="flex-1 rounded-3xl border border-slate-800 bg-slate-900 p-10 shadow-lg shadow-slate-950/40">
           <header className="mb-8 flex items-start justify-between gap-4">

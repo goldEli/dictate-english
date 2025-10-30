@@ -42,3 +42,31 @@ body {
 *::-webkit-scrollbar-thumb:hover {
   background: #52525b;
 }
+
+.confetti-piece {
+  position: absolute;
+  top: 0;
+  display: block;
+  opacity: 0;
+  border-radius: 999px;
+  will-change: transform, opacity;
+  animation-name: confetti-fall;
+  animation-timing-function: cubic-bezier(0.22, 0.61, 0.36, 1);
+  animation-fill-mode: forwards;
+}
+
+@keyframes confetti-fall {
+  0% {
+    transform: translate3d(0, -120vh, 0)
+      rotate(var(--confetti-rotate-start, 0deg));
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(var(--confetti-drift, 0vw), 120vh, 0)
+      rotate(var(--confetti-rotate-end, 360deg));
+    opacity: 0;
+  }
+}

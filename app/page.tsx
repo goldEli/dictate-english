@@ -17,6 +17,7 @@ type Sentence = {
 };
 
 const STORAGE_KEY = "dictate-english-sentences";
+const INDEX_STORAGE_KEY = "dictate-english-current-index";
 const DEFAULT_SENTENCES: Sentence[] = [
   { id: "s-1", text: "The quick brown fox jumps over the lazy dog." },
   { id: "s-2", text: "Please open the window before the rain starts." },
@@ -99,11 +100,32 @@ export default function Home() {
     }
 
     try {
-      const stored = window.localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = sanitizeSentencesPayload(JSON.parse(stored));
+      const storedSentences = window.localStorage.getItem(STORAGE_KEY);
+      let restoredSentences: Sentence[] | null = null;
+
+      if (storedSentences) {
+        const parsed = sanitizeSentencesPayload(JSON.parse(storedSentences));
         if (parsed) {
+          restoredSentences = parsed;
           setSentences(parsed);
+        }
+      }
+
+      const storedIndex = window.localStorage.getItem(INDEX_STORAGE_KEY);
+      if (storedIndex !== null) {
+        const parsedIndex = Number.parseInt(storedIndex, 10);
+
+        if (!Number.isNaN(parsedIndex)) {
+          const referenceList = restoredSentences ?? DEFAULT_SENTENCES;
+          if (referenceList.length === 0) {
+            setCurrentIndex(0);
+          } else {
+            const safeIndex = Math.min(
+              Math.max(parsedIndex, 0),
+              referenceList.length - 1,
+            );
+            setCurrentIndex(safeIndex);
+          }
         }
       }
     } catch (error) {
@@ -128,6 +150,18 @@ export default function Home() {
 
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(sentences));
   }, [isReady, sentences]);
+
+  useEffect(() => {
+    if (!isReady || typeof window === "undefined") {
+      return;
+    }
+
+    try {
+      window.localStorage.setItem(INDEX_STORAGE_KEY, `${currentIndex}`);
+    } catch (error) {
+      console.error("Unable to store current sentence index", error);
+    }
+  }, [currentIndex, isReady]);
 
   useEffect(() => {
     if (!importStatus || typeof window === "undefined") {

@@ -10,6 +10,7 @@ import {
 } from "react";
 
 import { ConfettiBurst } from "@/app/components/confetti";
+import { useAudioCues } from "@/app/hooks/use-audio-cues";
 
 type Sentence = {
   id: string;
@@ -83,6 +84,7 @@ export default function Home() {
     { type: "success" | "error"; message: string }
     | null>(null);
   const [celebrations, setCelebrations] = useState<string[]>([]);
+  const { playCompletion } = useAudioCues();
   const triggerCelebration = useCallback(() => {
     setCelebrations((previous) => [...previous, makeId()]);
   }, []);
@@ -252,6 +254,7 @@ export default function Home() {
     const typed = normalize(value);
 
     if (expected.length > 0 && typed === expected) {
+      playCompletion();
       triggerCelebration();
       setInputValue("");
       setCurrentIndex((previous) => {

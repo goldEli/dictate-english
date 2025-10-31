@@ -52,18 +52,37 @@ const createAudioPool = (src: string, size = 8, volume = 0.35): AudioPool | null
   return { play, dispose };
 };
 
-export function useAudioCues() {
+type AudioCueOptions = {
+  completionEnabled?: boolean;
+  keypressEnabled?: boolean;
+};
+
+export function useAudioCues({
+  completionEnabled = true,
+  keypressEnabled = true,
+}: AudioCueOptions = {}) {
   const keyPoolRef = useRef<AudioPool | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
+  const keypressEnabledRef = useRef(keypressEnabled);
 
   useEffect(() => {
-    keyPoolRef.current = createAudioPool("/press_down.mp3");
+    keypressEnabledRef.current = keypressEnabled;
+
+    if (!keypressEnabled) {
+      keyPoolRef.current?.dispose();
+      keyPoolRef.current = null;
+      return;
+    }
+
+    if (!keyPoolRef.current) {
+      keyPoolRef.current = createAudioPool("/press_down.mp3");
+    }
 
     return () => {
       keyPoolRef.current?.dispose();
       keyPoolRef.current = null;
     };
-  }, []);
+  }, [keypressEnabled]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -72,6 +91,10 @@ export function useAudioCues() {
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.metaKey || event.ctrlKey || event.altKey) {
+        return;
+      }
+
+      if (!keypressEnabledRef.current) {
         return;
       }
 
@@ -97,6 +120,10 @@ export function useAudioCues() {
 
   const playCompletion = useCallback(() => {
     if (typeof window === "undefined") {
+      return;
+    }
+
+    if (!completionEnabled) {
       return;
     }
 
@@ -156,7 +183,7 @@ export function useAudioCues() {
       oscillator.stop(startTime + 0.32);
       oscillator.addEventListener("ended", handleEnded, { once: true });
     });
-  }, []);
+  }, [completionEnabled]);
 
   return { playCompletion };
 }

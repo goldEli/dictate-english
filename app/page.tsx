@@ -17,13 +17,23 @@ type Sentence = {
   text: string;
 };
 
+type Preferences = {
+  completionSound: boolean;
+  keypressSound: boolean;
+};
+
 const STORAGE_KEY = "dictate-english-sentences";
 const INDEX_STORAGE_KEY = "dictate-english-current-index";
+const PREFERENCES_KEY = "dictate-english-preferences";
 const DEFAULT_SENTENCES: Sentence[] = [
   { id: "s-1", text: "The quick brown fox jumps over the lazy dog." },
   { id: "s-2", text: "Please open the window before the rain starts." },
   { id: "s-3", text: "Travel teaches you what books alone never can." },
 ];
+const DEFAULT_PREFERENCES: Preferences = {
+  completionSound: true,
+  keypressSound: true,
+};
 const EXPORT_FILENAME = "dictate-english-sentences.json";
 
 const normalize = (value: string) => value.replace(/\s+/g, " ").trim();
@@ -72,6 +82,31 @@ const sanitizeSentencesPayload = (value: unknown): Sentence[] | null => {
   return sanitized;
 };
 
+const sanitizePreferences = (value: unknown): Preferences | null => {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const maybe = value as {
+    completionSound?: unknown;
+    keypressSound?: unknown;
+  };
+
+  const completion =
+    typeof maybe.completionSound === "boolean"
+      ? maybe.completionSound
+      : DEFAULT_PREFERENCES.completionSound;
+  const keypress =
+    typeof maybe.keypressSound === "boolean"
+      ? maybe.keypressSound
+      : DEFAULT_PREFERENCES.keypressSound;
+
+  return {
+    completionSound: completion,
+    keypressSound: keypress,
+  };
+};
+
 export default function Home() {
   const [sentences, setSentences] = useState<Sentence[]>(DEFAULT_SENTENCES);
   const [isReady, setIsReady] = useState(false);
@@ -84,7 +119,15 @@ export default function Home() {
     { type: "success" | "error"; message: string }
     | null>(null);
   const [celebrations, setCelebrations] = useState<string[]>([]);
-  const { playCompletion } = useAudioCues();
+  const [preferences, setPreferences] =
+    useState<Preferences>(DEFAULT_PREFERENCES);
+  const [preferencesReady, setPreferencesReady] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  const { playCompletion } = useAudioCues({
+    keypressEnabled: preferences.keypressSound,
+    completionEnabled: preferences.completionSound,
+  });
   const triggerCelebration = useCallback(() => {
     setCelebrations((previous) => [...previous, makeId()]);
   }, []);
@@ -92,6 +135,18 @@ export default function Home() {
     setCelebrations((previous) =>
       previous.filter((value) => value !== id),
     );
+  }, []);
+  const togglePreference = useCallback((key: keyof Preferences) => {
+    setPreferences((previous) => ({
+      ...previous,
+      [key]: !previous[key],
+    }));
+  }, []);
+  const closeMenu = useCallback(() => {
+    setIsMenuOpen(false);
+  }, []);
+  const toggleMenu = useCallback(() => {
+    setIsMenuOpen((previous) => !previous);
   }, []);
 
   const currentSentence = sentences[currentIndex];
@@ -142,8 +197,74 @@ export default function Home() {
       return;
     }
 
+    try {
+      const storedPreferences = window.localStorage.getItem(PREFERENCES_KEY);
+      if (storedPreferences) {
+        const parsed = sanitizePreferences(JSON.parse(storedPreferences));
+        if (parsed) {
+          setPreferences(parsed);
+        }
+      }
+    } catch (error) {
+      console.error("Unable to read preferences", error);
+    } finally {
+      setPreferencesReady(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!preferencesReady || typeof window === "undefined") {
+      return;
+    }
+
+    try {
+      window.localStorage.setItem(
+        PREFERENCES_KEY,
+        JSON.stringify(preferences),
+      );
+    } catch (error) {
+      console.error("Unable to store preferences", error);
+    }
+  }, [preferences, preferencesReady]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
     setSpeechAvailable("speechSynthesis" in window);
   }, []);
+
+  useEffect(() => {
+    if (!isMenuOpen) {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!menuRef.current) {
+        return;
+      }
+
+      const target = event.target;
+      if (target instanceof Node && !menuRef.current.contains(target)) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsMenuOpen(false);
+      }
+    };
+
+    window.addEventListener("pointerdown", handlePointerDown);
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("pointerdown", handlePointerDown);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isMenuOpen]);
 
   useEffect(() => {
     if (!isReady || typeof window === "undefined") {
@@ -444,16 +565,147 @@ export default function Home() {
                 Press Cmd+R (Ctrl+R on Windows) to replay the current sentence.
               </p>
             </div>
-            <div className="shrink-0 rounded-full bg-slate-800 px-5 py-2 text-xs font-medium text-slate-300">
-              {sentences.length > 0 ? (
-                <>
-                  Sentence {currentIndex + 1} of {sentences.length}
-                </>
-              ) : (
-                "No sentences"
-              )}
+            <div className="flex items-center gap-3">
+              <div className="shrink-0 rounded-full bg-slate-800 px-5 py-2 text-xs font-medium text-slate-300">
+                {sentences.length > 0 ? (
+                  <>
+                    Sentence {currentIndex + 1} of {sentences.length}
+                  </>
+                ) : (
+                  "No sentences"
+                )}
+              </div>
+              <div className="relative" ref={menuRef}>
+                <button
+                  type="button"
+                  onClick={toggleMenu}
+                  aria-expanded={isMenuOpen}
+                  aria-haspopup="true"
+                  className="rounded-full border border-slate-700 px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-slate-200 transition hover:border-slate-500 hover:text-slate-100"
+                >
+                  Menu
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="application/json"
+                  className="hidden"
+                  onChange={handleImportFile}
+                />
+                {isMenuOpen && (
+                  <div className="absolute right-0 top-full z-[130] mt-3 w-80 space-y-6 rounded-2xl border border-slate-800 bg-slate-950/95 p-6 shadow-2xl shadow-slate-950/50 backdrop-blur">
+                    <div>
+                      <h3 className="text-sm font-semibold text-slate-100">
+                        Backup &amp; Share
+                      </h3>
+                      <p className="mt-1 text-xs text-slate-400">
+                        Export your practice sentences or import a saved list.
+                      </p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            handleExport();
+                            closeMenu();
+                          }}
+                          className="rounded-full bg-emerald-500 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-900 transition hover:bg-emerald-400"
+                        >
+                          Export
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            fileInputRef.current?.click();
+                            closeMenu();
+                          }}
+                          className="rounded-full border border-slate-700 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-200 transition hover:border-slate-500"
+                        >
+                          Import
+                        </button>
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold text-slate-100">
+                        Sound Effects
+                      </h3>
+                      <p className="mt-1 text-xs text-slate-400">
+                        Toggle feedback for typing and completed sentences.
+                      </p>
+                      <div className="mt-4 space-y-3">
+                        <div className="flex items-center justify-between gap-4 rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-3">
+                          <div>
+                            <p className="text-sm font-medium text-slate-100">
+                              Key press click
+                            </p>
+                            <p className="text-xs text-slate-400">
+                              Play a soft click for every key you press.
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            aria-pressed={preferences.keypressSound}
+                            onClick={() => togglePreference("keypressSound")}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${
+                              preferences.keypressSound
+                                ? "bg-emerald-500/80"
+                                : "bg-slate-700"
+                            }`}
+                          >
+                            <span
+                              className={`inline-block h-5 w-5 transform rounded-full bg-slate-950 transition ${
+                                preferences.keypressSound
+                                  ? "translate-x-5"
+                                  : "translate-x-1"
+                              }`}
+                            />
+                          </button>
+                        </div>
+                        <div className="flex items-center justify-between gap-4 rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-3">
+                          <div>
+                            <p className="text-sm font-medium text-slate-100">
+                              Completion flourish
+                            </p>
+                            <p className="text-xs text-slate-400">
+                              Hear a celebratory chime when you finish a sentence.
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            aria-pressed={preferences.completionSound}
+                            onClick={() => togglePreference("completionSound")}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${
+                              preferences.completionSound
+                                ? "bg-emerald-500/80"
+                                : "bg-slate-700"
+                            }`}
+                          >
+                            <span
+                              className={`inline-block h-5 w-5 transform rounded-full bg-slate-950 transition ${
+                                preferences.completionSound
+                                  ? "translate-x-5"
+                                  : "translate-x-1"
+                              }`}
+                            />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </header>
+          {importStatus && (
+            <div
+              className={`mb-6 rounded-2xl border px-5 py-3 text-sm ${
+                importStatus.type === "success"
+                  ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-200"
+                  : "border-rose-500/40 bg-rose-500/10 text-rose-200"
+              }`}
+            >
+              {importStatus.message}
+            </div>
+          )}
 
           {currentSentence ? (
             <div className="flex flex-col gap-6">
@@ -553,47 +805,8 @@ export default function Home() {
               Create a small library to practice from. Changes save automatically.
             </p>
           </div>
-
-          <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
-              Backup &amp; Share
-            </p>
-            <p className="mt-2 text-sm text-slate-300">
-              Export your sentences or import a saved list in one click.
-            </p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={handleExport}
-                className="rounded-full bg-emerald-500 px-4 py-2 text-sm font-medium text-slate-900 transition hover:bg-emerald-400"
-              >
-                Export
-              </button>
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="rounded-full border border-slate-700 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500"
-              >
-                Import
-              </button>
-            </div>
-            {importStatus && (
-              <p
-                className={`mt-3 text-sm ${importStatus.type === "success"
-                    ? "text-emerald-400"
-                    : "text-rose-400"
-                  }`}
-              >
-                {importStatus.message}
-              </p>
-            )}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="application/json"
-              className="hidden"
-              onChange={handleImportFile}
-            />
+          <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4 text-sm text-slate-300">
+            Find import/export and sound controls in the menu button above.
           </div>
 
           <div className="space-y-4">

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   ChangeEvent,
   useCallback,
@@ -11,108 +12,26 @@ import {
 
 import { ConfettiBurst } from "@/app/components/confetti";
 import { useAudioCues } from "@/app/hooks/use-audio-cues";
-
-type Sentence = {
-  id: string;
-  text: string;
-};
-
-type Preferences = {
-  completionSound: boolean;
-  keypressSound: boolean;
-};
-
-const STORAGE_KEY = "dictate-english-sentences";
-const INDEX_STORAGE_KEY = "dictate-english-current-index";
-const PREFERENCES_KEY = "dictate-english-preferences";
-const DEFAULT_SENTENCES: Sentence[] = [
-  { id: "s-1", text: "The quick brown fox jumps over the lazy dog." },
-  { id: "s-2", text: "Please open the window before the rain starts." },
-  { id: "s-3", text: "Travel teaches you what books alone never can." },
-];
-const DEFAULT_PREFERENCES: Preferences = {
-  completionSound: true,
-  keypressSound: true,
-};
-const EXPORT_FILENAME = "dictate-english-sentences.json";
-
-const normalize = (value: string) => value.replace(/\s+/g, " ").trim();
-
-const makeId = () => {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-    return crypto.randomUUID();
-  }
-
-  return `s-${Math.random().toString(36).slice(2, 10)}`;
-};
-
-const sanitizeSentencesPayload = (value: unknown): Sentence[] | null => {
-  if (!Array.isArray(value)) {
-    return null;
-  }
-
-  const seenIds = new Set<string>();
-  const sanitized: Sentence[] = [];
-
-  for (const entry of value) {
-    if (!entry || typeof entry !== "object") {
-      continue;
-    }
-
-    const maybeId = (entry as { id?: unknown }).id;
-    const maybeText = (entry as { text?: unknown }).text;
-
-    if (typeof maybeText !== "string") {
-      continue;
-    }
-
-    let id =
-      typeof maybeId === "string" && maybeId.trim().length > 0
-        ? maybeId.trim()
-        : makeId();
-
-    while (seenIds.has(id)) {
-      id = makeId();
-    }
-
-    sanitized.push({ id, text: maybeText });
-    seenIds.add(id);
-  }
-
-  return sanitized;
-};
-
-const sanitizePreferences = (value: unknown): Preferences | null => {
-  if (!value || typeof value !== "object") {
-    return null;
-  }
-
-  const maybe = value as {
-    completionSound?: unknown;
-    keypressSound?: unknown;
-  };
-
-  const completion =
-    typeof maybe.completionSound === "boolean"
-      ? maybe.completionSound
-      : DEFAULT_PREFERENCES.completionSound;
-  const keypress =
-    typeof maybe.keypressSound === "boolean"
-      ? maybe.keypressSound
-      : DEFAULT_PREFERENCES.keypressSound;
-
-  return {
-    completionSound: completion,
-    keypressSound: keypress,
-  };
-};
+import {
+  DEFAULT_PREFERENCES,
+  DEFAULT_SENTENCES,
+  EXPORT_FILENAME,
+  INDEX_STORAGE_KEY,
+  PREFERENCES_KEY,
+  Preferences,
+  Sentence,
+  STORAGE_KEY,
+  makeId,
+  normalize,
+  sanitizePreferences,
+  sanitizeSentencesPayload,
+} from "@/app/lib/sentence-utils";
 
 export default function Home() {
   const [sentences, setSentences] = useState<Sentence[]>(DEFAULT_SENTENCES);
   const [isReady, setIsReady] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [inputValue, setInputValue] = useState("");
-  const [draft, setDraft] = useState("");
   const [speechAvailable, setSpeechAvailable] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [importStatus, setImportStatus] = useState<
@@ -387,33 +306,6 @@ export default function Home() {
         return nextIndex < sentences.length ? nextIndex : 0;
       });
     }
-  };
-
-  const handleAddSentence = () => {
-    const cleaned = draft.trim();
-    if (!cleaned) {
-      return;
-    }
-
-    setSentences((previous) => [
-      ...previous,
-      { id: makeId(), text: cleaned },
-    ]);
-    setDraft("");
-  };
-
-  const handleUpdateSentence = (id: string, text: string) => {
-    setSentences((previous) =>
-      previous.map((sentence) =>
-        sentence.id === id ? { ...sentence, text } : sentence,
-      ),
-    );
-  };
-
-  const handleDeleteSentence = (id: string) => {
-    setSentences((previous) =>
-      previous.filter((sentence) => sentence.id !== id),
-    );
   };
 
   const handleExport = useCallback(() => {
@@ -799,10 +691,11 @@ export default function Home() {
         <aside className="w-[320px] shrink-0 space-y-6 rounded-3xl border border-slate-800 bg-slate-900 p-8 shadow-lg shadow-slate-950/40">
           <div>
             <h2 className="text-lg font-semibold text-slate-100">
-              Sentence Bank
+              English Lists
             </h2>
             <p className="mt-1 text-sm text-slate-400">
-              Create a small library to practice from. Changes save automatically.
+              Jump to any sentence or open the Sentence Bank to manage your
+              collection.
             </p>
           </div>
           <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4 text-sm text-slate-300">
@@ -810,78 +703,64 @@ export default function Home() {
           </div>
 
           <div className="space-y-4">
-            <label className="flex flex-col gap-2">
-              <span className="text-sm font-medium text-slate-200">
-                Add a sentence
-              </span>
-              <textarea
-                value={draft}
-                onChange={(event) => setDraft(event.target.value)}
-                placeholder="Example: She left the keys on the kitchen counter."
-                className="min-h-[96px] resize-none rounded-2xl border border-slate-700 bg-slate-950 p-3 text-sm text-slate-100 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-700"
-              />
-              <button
-                type="button"
-                onClick={handleAddSentence}
-                className="self-end rounded-full bg-emerald-500 px-4 py-2 text-sm font-medium text-slate-900 transition hover:bg-emerald-400"
-              >
-                Save
-              </button>
-            </label>
+            {sentences.length === 0 ? (
+              <p className="text-sm text-slate-400">
+                No sentences yet. Visit the Sentence Bank to add your first
+                practice list.
+              </p>
+            ) : (
+              <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
+                {sentences.map((sentence, index) => {
+                  const preview =
+                    sentence.text.length > 120
+                      ? `${sentence.text.slice(0, 120)}…`
+                      : sentence.text;
+                  const isActive = index === currentIndex;
 
-            <div className="space-y-3 max-h-[400px] overflow-y-auto">
-              {sentences.length === 0 ? (
-                <p className="text-sm text-slate-400">
-                  No sentences yet. Start by adding one above.
-                </p>
-              ) : (
-                sentences.map((sentence, index) => (
-                  <div
-                    key={sentence.id}
-                    className={`rounded-2xl border px-4 py-3 text-sm shadow-sm transition ${index === currentIndex
-                        ? "border-emerald-500/40 bg-emerald-500/10"
-                        : "border-slate-800 bg-slate-950"
+                  return (
+                    <div
+                      key={sentence.id}
+                      className={`rounded-2xl border px-4 py-3 text-sm transition ${
+                        isActive
+                          ? "border-emerald-500/40 bg-emerald-500/10"
+                          : "border-slate-800 bg-slate-950 hover:border-slate-600"
                       }`}
-                    onClick={() => setCurrentIndex(index)}
-                  >
-                    <div className="mb-2 flex items-center justify-between gap-2">
+                    >
                       <button
                         type="button"
                         onClick={() => setCurrentIndex(index)}
-                        className="text-xs font-semibold uppercase tracking-wide text-slate-400"
+                        className="w-full text-left"
                       >
-                        Sentence {index + 1}
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                          Sentence {index + 1}
+                        </p>
+                        <p className="mt-2 text-sm text-slate-200">
+                          {preview}
+                        </p>
                       </button>
-                      <div className="flex items-center gap-2">
+                      <div className="mt-3 flex items-center justify-between text-xs text-slate-400">
+                        <span>{isActive ? "Now practicing" : "Tap to load"}</span>
                         <button
                           type="button"
                           onClick={() => speak(sentence.text)}
-                          className="text-xs font-medium text-slate-300 transition hover:text-slate-100"
+                          className="font-medium text-slate-300 transition hover:text-slate-100"
                         >
                           Play
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteSentence(sentence.id)}
-                          className="text-xs font-medium text-rose-400 transition hover:text-rose-300"
-                        >
-                          Delete
-                        </button>
                       </div>
                     </div>
-                    <textarea
-                      value={sentence.text}
-                      onChange={(event) =>
-                        handleUpdateSentence(sentence.id, event.target.value)
-                      }
-                      onFocus={() => setCurrentIndex(index)}
-                      className="h-24 w-full resize-none rounded-xl border border-slate-800 bg-slate-950 p-3 text-sm text-slate-100 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-700"
-                    />
-                  </div>
-                ))
-              )}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
+
+          <Link
+            href="/sentences"
+            className="inline-flex w-full items-center justify-center rounded-full border border-slate-700 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:text-slate-100"
+          >
+            Open Sentence Bank
+          </Link>
         </aside>
       </main>
     </div>

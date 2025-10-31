@@ -537,7 +537,7 @@ export default function Home() {
                             type="button"
                             aria-pressed={preferences.keypressSound}
                             onClick={() => togglePreference("keypressSound")}
-                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${
+                            className={`min-w-11 relative inline-flex h-6 w-11 items-center rounded-full transition ${
                               preferences.keypressSound
                                 ? "bg-emerald-500/80"
                                 : "bg-slate-700"
@@ -565,7 +565,7 @@ export default function Home() {
                             type="button"
                             aria-pressed={preferences.completionSound}
                             onClick={() => togglePreference("completionSound")}
-                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${
+                            className={`min-w-11 relative inline-flex h-6 w-11 items-center rounded-full transition ${
                               preferences.completionSound
                                 ? "bg-emerald-500/80"
                                 : "bg-slate-700"
@@ -709,45 +709,38 @@ export default function Home() {
                 practice list.
               </p>
             ) : (
-              <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
+              <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
                 {sentences.map((sentence, index) => {
-                  const preview =
-                    sentence.text.length > 120
-                      ? `${sentence.text.slice(0, 120)}…`
-                      : sentence.text;
                   const isActive = index === currentIndex;
 
                   return (
                     <div
                       key={sentence.id}
-                      className={`rounded-2xl border px-4 py-3 text-sm transition ${
+                      className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-sm transition ${
                         isActive
-                          ? "border-emerald-500/40 bg-emerald-500/10"
-                          : "border-slate-800 bg-slate-950 hover:border-slate-600"
+                          ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-100"
+                          : "border-slate-800 bg-slate-950 text-slate-200 hover:border-slate-600"
                       }`}
                     >
                       <button
                         type="button"
                         onClick={() => setCurrentIndex(index)}
-                        className="w-full text-left"
+                        className="flex-1 text-left flex flex-nowrap items-center overflow-hidden"
                       >
-                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                          Sentence {index + 1}
-                        </p>
-                        <p className="mt-2 text-sm text-slate-200">
-                          {preview}
-                        </p>
+                        <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                          {index + 1 < 10 ? `0${index + 1}` : index + 1}
+                        </span>
+                        <span className="ml-3 inline-block max-w-[14rem] truncate align-middle">
+                          {sentence.text}
+                        </span>
                       </button>
-                      <div className="mt-3 flex items-center justify-between text-xs text-slate-400">
-                        <span>{isActive ? "Now practicing" : "Tap to load"}</span>
-                        <button
-                          type="button"
-                          onClick={() => speak(sentence.text)}
-                          className="font-medium text-slate-300 transition hover:text-slate-100"
-                        >
-                          Play
-                        </button>
-                      </div>
+                      {/* <button
+                        type="button"
+                        onClick={() => speak(sentence.text)}
+                        className="text-xs font-medium text-slate-300 transition hover:text-slate-100"
+                      >
+                        Play
+                      </button> */}
                     </div>
                   );
                 })}

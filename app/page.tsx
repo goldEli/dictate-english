@@ -693,14 +693,14 @@ export default function Home() {
             <h2 className="text-lg font-semibold text-slate-100">
               English Lists
             </h2>
-            <p className="mt-1 text-sm text-slate-400">
+            {/* <p className="mt-1 text-sm text-slate-400">
               Jump to any sentence or open the Sentence Bank to manage your
               collection.
-            </p>
+            </p> */}
           </div>
-          <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4 text-sm text-slate-300">
+          {/* <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4 text-sm text-slate-300">
             Find import/export and sound controls in the menu button above.
-          </div>
+          </div> */}
 
           <div className="space-y-4">
             {sentences.length === 0 ? (

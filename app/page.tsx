@@ -586,18 +586,16 @@ export default function Home() {
                             type="button"
                             aria-pressed={preferences.keypressSound}
                             onClick={() => togglePreference("keypressSound")}
-                            className={`min-w-11 relative inline-flex h-6 w-11 items-center rounded-full transition ${
-                              preferences.keypressSound
+                            className={`min-w-11 relative inline-flex h-6 w-11 items-center rounded-full transition ${preferences.keypressSound
                                 ? "bg-emerald-500/80"
                                 : "bg-slate-700"
-                            }`}
+                              }`}
                           >
                             <span
-                              className={`inline-block h-5 w-5 transform rounded-full bg-slate-950 transition ${
-                                preferences.keypressSound
+                              className={`inline-block h-5 w-5 transform rounded-full bg-slate-950 transition ${preferences.keypressSound
                                   ? "translate-x-5"
                                   : "translate-x-1"
-                              }`}
+                                }`}
                             />
                           </button>
                         </div>
@@ -614,18 +612,16 @@ export default function Home() {
                             type="button"
                             aria-pressed={preferences.completionSound}
                             onClick={() => togglePreference("completionSound")}
-                            className={`min-w-11 relative inline-flex h-6 w-11 items-center rounded-full transition ${
-                              preferences.completionSound
+                            className={`min-w-11 relative inline-flex h-6 w-11 items-center rounded-full transition ${preferences.completionSound
                                 ? "bg-emerald-500/80"
                                 : "bg-slate-700"
-                            }`}
+                              }`}
                           >
                             <span
-                              className={`inline-block h-5 w-5 transform rounded-full bg-slate-950 transition ${
-                                preferences.completionSound
+                              className={`inline-block h-5 w-5 transform rounded-full bg-slate-950 transition ${preferences.completionSound
                                   ? "translate-x-5"
                                   : "translate-x-1"
-                              }`}
+                                }`}
                             />
                           </button>
                         </div>
@@ -638,11 +634,10 @@ export default function Home() {
           </header>
           {importStatus && (
             <div
-              className={`mb-6 rounded-2xl border px-5 py-3 text-sm ${
-                importStatus.type === "success"
+              className={`mb-6 rounded-2xl border px-5 py-3 text-sm ${importStatus.type === "success"
                   ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-200"
                   : "border-rose-500/40 bg-rose-500/10 text-rose-200"
-              }`}
+                }`}
             >
               {importStatus.message}
             </div>
@@ -652,9 +647,20 @@ export default function Home() {
             <div className="flex flex-col gap-6">
 
               <label className="flex flex-col gap-3">
-                <span className="text-sm font-medium text-slate-200">
-                  Type what you hear
-                </span>
+                <div className="flex items-center gap-4">
+
+                  <span className="text-sm font-medium text-slate-200">
+                    Type what you hear
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={handleMasterSentence}
+                    className="rounded-2xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-200 transition hover:bg-emerald-500/20 hover:text-emerald-50"
+                  >
+                    Mastered, No Practice Needed
+                  </button>
+                </div>
                 <textarea
                   value={inputValue}
                   onChange={(event) => handleInputChange(event.target.value)}
@@ -728,13 +734,6 @@ export default function Home() {
                 )}
               </div>
 
-              <button
-                type="button"
-                onClick={handleMasterSentence}
-                className="rounded-2xl border border-emerald-500/40 bg-emerald-500/10 px-5 py-3 text-sm font-semibold text-emerald-200 transition hover:bg-emerald-500/20 hover:text-emerald-50"
-              >
-                Mastered, No Practice Needed
-              </button>
 
             </div>
           ) : (
@@ -773,11 +772,10 @@ export default function Home() {
                   return (
                     <div
                       key={sentence.id}
-                      className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-sm transition ${
-                        isActive
+                      className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-sm transition ${isActive
                           ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-100"
                           : "border-slate-800 bg-slate-950 text-slate-200 hover:border-slate-600"
-                      }`}
+                        }`}
                     >
                       <button
                         type="button"

@@ -29,6 +29,17 @@ export const EXPORT_FILENAME = "dictate-english-sentences.json";
 
 export const normalize = (value: string) => value.replace(/\s+/g, " ").trim();
 
+const punctuationRegex = /[\p{P}\p{S}]/gu;
+
+export const stripPunctuation = (value: string) =>
+  value.replace(punctuationRegex, "");
+
+export const normalizeForComparison = (value: string) =>
+  normalize(stripPunctuation(value).toLowerCase());
+
+export const sanitizeWordForComparison = (value: string) =>
+  stripPunctuation(value).toLowerCase();
+
 export const makeId = () => {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
     return crypto.randomUUID();

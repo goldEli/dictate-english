@@ -22,8 +22,9 @@ import {
   Sentence,
   STORAGE_KEY,
   makeId,
-  normalize,
+  normalizeForComparison,
   sanitizePreferences,
+  sanitizeWordForComparison,
   sanitizeSentencesPayload,
 } from "@/app/lib/sentence-utils";
 
@@ -290,10 +291,10 @@ export default function Home() {
       return;
     }
 
-    const expected = normalize(currentSentence.text);
-    const typed = normalize(value);
+    const expectedNormalized = normalizeForComparison(currentSentence.text);
+    const typedNormalized = normalizeForComparison(value);
 
-    if (expected.length > 0 && typed === expected) {
+    if (expectedNormalized.length > 0 && typedNormalized === expectedNormalized) {
       playCompletion();
       triggerCelebration();
       setInputValue("");
@@ -394,7 +395,7 @@ export default function Home() {
 
     const targetWords = currentSentence.text.split(/\s+/).filter(Boolean);
     const typedWords = inputValue.trim()
-      ? inputValue.trim().split(/\s+/)
+      ? inputValue.trim().split(/\s+/).filter(Boolean)
       : [];
 
     let mismatch:
@@ -404,31 +405,68 @@ export default function Home() {
       }
       | null = null;
     let mismatchFound = false;
+    let typedIndex = 0;
 
-    const states = targetWords.map((word, index) => {
+    const states = targetWords.map((word) => {
       if (mismatchFound) {
         return { word, status: "upcoming" as const };
       }
 
-      const typedWord = typedWords[index];
+      const cleanTarget = sanitizeWordForComparison(word);
+
+      if (cleanTarget.length === 0) {
+        // Ignore punctuation-only tokens in the sentence definition.
+        return { word, status: "correct" as const };
+      }
+
+      let typedWord = typedWords[typedIndex];
+      let cleanTyped =
+        typedWord !== undefined
+          ? sanitizeWordForComparison(typedWord)
+          : "";
+
+      while (
+        typedWord !== undefined &&
+        cleanTyped.length === 0
+      ) {
+        typedIndex += 1;
+        typedWord = typedWords[typedIndex];
+        cleanTyped =
+          typedWord !== undefined
+            ? sanitizeWordForComparison(typedWord)
+            : "";
+      }
+
       if (typedWord === undefined) {
         return { word, status: "upcoming" as const };
       }
 
-      if (typedWord === word) {
+      if (cleanTarget === cleanTyped) {
+        typedIndex += 1;
         return { word, status: "correct" as const };
       }
 
       mismatchFound = true;
       mismatch = { expected: word, typed: typedWord };
+      typedIndex += 1;
       return { word, status: "error" as const };
     });
 
-    if (!mismatch && typedWords.length > targetWords.length) {
-      mismatch = {
-        expected: "",
-        typed: typedWords[targetWords.length],
-      };
+    if (!mismatch) {
+      while (typedIndex < typedWords.length) {
+        const extraWord = typedWords[typedIndex];
+        const cleanExtra = sanitizeWordForComparison(extraWord);
+
+        if (cleanExtra.length > 0) {
+          mismatch = {
+            expected: "",
+            typed: extraWord,
+          };
+          break;
+        }
+
+        typedIndex += 1;
+      }
     }
 
     return { wordStates: states, mismatch };

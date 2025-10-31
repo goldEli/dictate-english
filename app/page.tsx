@@ -309,6 +309,17 @@ export default function Home() {
     }
   };
 
+  const handleMasterSentence = useCallback(() => {
+    if (!currentSentence) {
+      return;
+    }
+
+    setSentences((previous) =>
+      previous.filter((sentence) => sentence.id !== currentSentence.id),
+    );
+    setInputValue("");
+  }, [currentSentence, setSentences]);
+
   const handleExport = useCallback(() => {
     if (typeof window === "undefined") {
       return;
@@ -716,6 +727,14 @@ export default function Home() {
                   </p>
                 )}
               </div>
+
+              <button
+                type="button"
+                onClick={handleMasterSentence}
+                className="rounded-2xl border border-emerald-500/40 bg-emerald-500/10 px-5 py-3 text-sm font-semibold text-emerald-200 transition hover:bg-emerald-500/20 hover:text-emerald-50"
+              >
+                Mastered, No Practice Needed
+              </button>
 
             </div>
           ) : (
